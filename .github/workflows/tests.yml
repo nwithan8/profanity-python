@@ -1,0 +1,45 @@
+name: Tests
+on:
+  push:
+    branches:
+      - develop
+  pull_request: ~
+
+jobs:
+  versions:
+    runs-on: ubuntu-latest
+    outputs:
+      python_versions: ${{ steps.set-python-versions.outputs.python_versions }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set-python-versions
+        run: echo "python_versions=$(cat tautulli/PYTHON_VERSIONS.json | jq -c '')" >> $GITHUB_OUTPUT
+
+  unit-tests:
+    needs: versions
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python_version: ${{ fromJson(needs.versions.outputs.python_versions) }}
+    steps:
+      - name: Matrix => (${{ matrix.python_version}})
+        run: |
+          echo ${{ matrix.python_version }}
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Replace version stand-in
+        uses: jacobtomlinson/gha-find-replace@2.0.0
+        with:
+          find: "VERSIONADDEDBYGITHUB"
+          replace: "1000.0.0"
+          regex: false
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python_version }}
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          make install
+      - name: Test with pytest
+        run: make test
