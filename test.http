@@ -1,0 +1,6 @@
+POST https://vector.profanity.dev
+Content-Type: application/json
+
+{
+  "message": "profane message"
+}
